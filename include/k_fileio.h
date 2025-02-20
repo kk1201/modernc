@@ -1,4 +1,5 @@
 #ifndef K_FILEIO_H
+#define K_FILEIO_H
 
 enum { buf_max = 32 };
 

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "merge_sort.h"
+#include "rat.h"
 #include "k_fileio.h"
 
 void modulo_hour_example(void);
@@ -13,6 +14,7 @@ int main(int argc, char *argv[argc])
 	// modulo_hour_example();
 	// k_fileio_example();
 	merge_sort_example();
+	rat_print_example();
 }
 
 void modulo_hour_example(void)
