@@ -1,44 +1,37 @@
 #include <stdio.h>
-#include <math.h>
+#include "merge_sort.h"
+#include "k_fileio.h"
 
-double merge_sort(double array[static 1], size_t size);
+void modulo_hour_example(void);
 
 int main(int argc, char *argv[argc])
 {
-	// printf("Hello world");
-	double array[] = { 3, 1, 6, 9 };
-	merge_sort(array, 4);
-
-	printf("Final product:\n");
-	for (size_t i = 0; i < 4; ++i) {
-		printf("[%zu]=%.0f", i, array[i]);
-	}
+	argv = argv;
+	// if (text_output(argc, argv) == EXIT_FAILURE) {
+	// 	return EXIT_FAILURE;
+	// }
+	// modulo_hour_example();
+	// k_fileio_example();
+	merge_sort_example();
 }
 
-double merge_sort(double array[static 1], size_t size)
+void modulo_hour_example(void)
 {
-	size_t new_size = ceil((float)size / 2);
-	double arr1[new_size];
-	double arr2[new_size];
+	int length, hour, minute_0 = 0;
+	int res_hour, res_minute0 = 0;
+	scanf("%d %d:%d", &length, &hour, &minute_0);
 
-	if (size != 2) {
-		for (size_t i = 0; i < new_size; ++i) {
-			arr1[i] = array[i];
-			arr2[i] = array[i + (new_size)];
-			printf("arr1[%zu]=%.0f arr2[%zu]=%.0f\n", i, arr1[i], i,
-			       arr2[i]);
-		}
+	res_hour = (hour + length) % 24;
+	res_minute0 = minute_0 % 60;
+	printf("%d hours after %d:%02d is %d:%02d\n", length, hour, minute_0,
+	       res_hour, res_minute0);
+}
 
-		merge_sort(arr1, size / 2);
-		merge_sort(arr2, size / 2);
+void print_array(double array[static 1], size_t size)
+{
+	printf("-- Array of size %zu --\n", size);
+	for (size_t i = 0; i < size; ++i) {
+		printf("[%zu]=%.0f\n", i, array[i]);
 	}
-
-	if (array[0] < array[1]) {
-		double temp = array[0];
-		array[0] = array[1];
-		array[1] = temp;
-	}
-	printf("[0]=%.0f [1]=%.0f\n", array[0], array[1]);
-
-	return array[0];
+	printf("-- End of array of size %zu --\n", size);
 }
