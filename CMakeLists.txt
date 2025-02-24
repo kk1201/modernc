@@ -10,6 +10,5 @@ add_executable(ModernC
 )
 target_include_directories(ModernC PRIVATE include/)
 
-set(CMAKE_C_FLAGS_DEBUG "-g -std=c99 -Wpedantic -pedantic-errors -Werror -Wall -Wextra -Waggregate-return -Wbad-function-cast -Wcast-align -Wcast-qual -Wfloat-equal -Wformat=2 -Wlogical-op -Wmissing-include-dirs -Wnested-externs -Wpointer-arith -Wredundant-decls -Wsequence-point -Wshadow -Wstrict-prototypes -Wswitch -Wundef -Wunreachable-code -Wunused-but-set-parameter -Wwrite-strings -fsanitize=address")
-# add_compile_options(-fsanitize=address)
+set(CMAKE_C_FLAGS_DEBUG "-g -std=c99 -Wpedantic -pedantic-errors -Werror -Wall -Wextra -Wbad-function-cast -Wcast-align -Wcast-qual -Wfloat-equal -Wformat=2 -Wlogical-op -Wmissing-include-dirs -Wnested-externs -Wpointer-arith -Wredundant-decls -Wsequence-point -Wshadow -Wstrict-prototypes -Wswitch -Wundef -Wunreachable-code -Wunused-but-set-parameter -Wwrite-strings -fsanitize=address")
 target_link_libraries(ModernC m)

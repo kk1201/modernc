@@ -16,5 +16,5 @@ void rat_print(struct rat *rp);
 
 void rat_print_example(void);
 
-k_error rat_copy(rat *out, rat const *in);
+rat *rat_copy(rat *out, rat y);
 #endif /* ifndef RAT_H */

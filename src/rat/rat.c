@@ -3,137 +3,199 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "rat.h"
-#include "k_error.h"
+#include "k_maths.h"
 
-// Copied from book
-uint64_t gcd2(uint64_t a, uint64_t b)
+rat rat_get(int64_t num, uint64_t denom)
 {
-	assert(a <= b);
-	if (!a)
-		return b;
+	rat ret = { .sign = (num < 0),
+		    .num = (num < 0) ? -num : num,
+		    .denom = denom };
 
-	return gcd2((b % a), a);
+	return ret;
 }
 
-// Copied from book
-uint64_t gcd(uint64_t a, uint64_t b)
+rat rat_get_normal(rat x)
 {
-	assert(a);
-	assert(b);
-	if (a < b) {
-		return gcd2(a, b);
+	uint64_t c = gcd(x.num, x.denom);
+	x.num /= c;
+	x.denom /= c;
+
+	return x;
+}
+
+rat rat_get_extended(rat x, uint64_t f)
+{
+	x.num *= f;
+	x.denom *= f;
+
+	return x;
+}
+
+rat rat_get_prod(rat x, rat y)
+{
+	rat ret = { .sign = (x.sign != y.sign),
+		    .num = x.num * y.num,
+		    .denom = x.denom * y.denom };
+
+	return rat_get_normal(ret);
+}
+
+rat rat_get_sum(rat x, rat y)
+{
+	if (x.num == 0)
+		return y;
+	else if (y.num == 0)
+		return x;
+
+	uint64_t c = gcd(x.denom, y.denom);
+	uint64_t ax = y.denom / c;
+	uint64_t bx = x.denom / c;
+
+	x = rat_get_extended(x, ax);
+	y = rat_get_extended(y, bx);
+	assert(x.denom == y.denom);
+
+	if (x.sign == y.sign) {
+		x.num += y.num;
+	} else if (x.num > y.num) {
+		x.num -= y.num;
 	} else {
-		return gcd2(b, a);
-	}
-}
-
-// Copied from book
-k_error rat_get(rat *out, int64_t num, uint64_t denom)
-{
-	if (!out) {
-		return K_FAIL;
-	}
-	out->sign = (num < 0);
-	out->num = (num < 0) ? -num : num;
-	out->denom = denom;
-
-	return K_SUCCESS;
-}
-
-// Copied from book
-k_error rat_normalise(rat *rp)
-{
-	if (!rp)
-		return K_FAIL;
-	uint64_t c = gcd(rp->num, rp->denom);
-	rp->num /= c;
-	rp->denom /= c;
-
-	return K_SUCCESS;
-}
-
-k_error rat_get_normal(rat *out, rat const *in)
-{
-	if (!out || !in)
-		return K_FAIL;
-	rat_copy(out, in);
-	rat_normalise(out);
-
-	return K_SUCCESS;
-}
-
-k_error rat_get_extended(rat *rp, uint64_t f)
-{
-	if (!rp)
-		return K_FAIL;
-	rp->num *= f;
-	rp->denom *= f;
-
-	return K_SUCCESS;
-}
-
-k_error rat_copy(rat *out, rat const *in)
-{
-	out->sign = in->sign;
-	out->num = in->num;
-	out->denom = in->denom;
-
-	return K_SUCCESS;
-}
-
-// Copied from book
-k_error rat_sumup(rat *rp, rat y)
-{
-	rp = rp;
-	y = y;
-	return K_SUCCESS;
-}
-
-k_error rat_dotproduct(rat *rp, size_t n, rat const a[static 1],
-		       rat const b[static 1])
-{
-	uint64_t num = 0;
-	uint64_t denom = 0;
-	for (size_t i = 0; i < n; ++i) {
-		rat normal_ai;
-		rat normal_bi;
-		rat_get_normal(&normal_ai, &a[i]);
-		rat_get_normal(&normal_bi, &b[i]);
-		// TODO
+		x.num = y.num - x.num;
+		x.sign = !x.sign;
 	}
 
-	rp->num = num;
-	rp->denom = denom;
-	rp->sign = a->sign;
+	return rat_get_normal(x);
+}
 
-	return K_SUCCESS;
+rat *rat_init(rat *rp, int64_t num, uint64_t denom)
+{
+	if (rp)
+		*rp = rat_get(num, denom);
+
+	return rp;
+}
+
+rat *rat_copy(rat *rp, rat y)
+{
+	if (rp)
+		*rp = (rat){ .sign = y.sign, .num = y.num, .denom = y.denom };
+
+	return rp;
+}
+
+rat *rat_normalise(rat *rp)
+{
+	if (rp)
+		*rp = rat_get_normal(*rp);
+
+	return rp;
+}
+
+rat *rat_extend(rat *rp, uint64_t f)
+{
+	if (rp)
+		*rp = rat_get_extended(*rp, f);
+
+	return rp;
+}
+
+rat *rat_sumup(rat *rp, rat y)
+{
+	uint64_t c = gcd(rp->denom, y.denom);
+	uint64_t ax = y.denom / c;
+	uint64_t bx = rp->denom / c;
+
+	rat_extend(rp, ax);
+	y = rat_get_extended(y, bx);
+	assert(rp->denom == y.denom);
+
+	if (rp->sign == y.sign) {
+		rp->num += y.num;
+	} else if (rp->num > y.num) {
+		rp->num -= y.num;
+	} else {
+		rp->num = y.num - rp->num;
+	}
+
+	return rat_normalise(rp);
+}
+
+rat *rma(rat *rp, rat x, rat y)
+{
+	return rat_sumup(rp, rat_get_prod(x, y));
 }
 
 void rat_print(rat *rp)
 {
+	if (!rp)
+		return;
+
 	char sign = (rp->sign) ? '-' : '+';
 	printf("%c%zu/%zu\n", sign, rp->num, rp->denom);
 }
 
 void rat_print_normalised(rat *rp)
 {
-	rat temp = { 0 };
-	rat_copy(&temp, rp);
-	rat_normalise(&temp);
-	rat_print(&temp);
+	if (!rp)
+		return;
+
+	rat_print(rat_normalise(rp));
 }
 
 void rat_print_array(rat arr[static 1], size_t size)
 {
+	assert(arr);
+
 	for (size_t i = 0; i < size; ++i) {
 		printf("[%zu] = ", i);
 		rat_print(&arr[i]);
 	}
 }
 
-int64_t rand_num(int64_t min, int64_t max)
+void rat_print_remainder(rat *rp)
 {
-	return ((rand() % (min - max)) + min);
+	assert(rp);
+
+	size_t whole = rp->num / rp->denom;
+	size_t remainder = rp->num % rp->denom;
+	char sign = (rp->sign) ? '-' : '+';
+
+	printf("%c%zu %zu/%zu\n", sign, whole, remainder, rp->denom);
+}
+
+rat rat_get_sum_array(size_t n, rat const A[n])
+{
+	assert(A && n > 0);
+	if (n == 1)
+		return A[0];
+
+	rat ret = { 0 };
+	for (size_t i = 0; i < n; ++i) {
+		ret = rat_get_sum(ret, A[i]);
+	}
+
+	return ret;
+}
+
+rat *rat_dotproduct(rat *rp, size_t n, rat const A[n], rat const B[n])
+{
+	assert(rp);
+	if (n <= 0 || !A || !B)
+		return 0;
+
+	rat temp[n];
+	for (size_t i = 0; i < n; ++i) {
+		rat_init(&temp[i], 0, 0);
+	}
+
+	for (size_t i = 0; i < n; ++i) {
+		temp[i] = rat_get_prod(A[i], B[i]);
+	}
+
+	*rp = rat_get_sum_array(n, temp);
+	rat_normalise(rp);
+
+	return rp;
 }
 
 void rat_print_example(void)
@@ -141,7 +203,7 @@ void rat_print_example(void)
 	rat r = { .sign = false, .num = 20, .denom = 5 };
 	rat_print(&r);
 
-	rat_get(&r, -30, 20);
+	rat_init(&r, -30, 20);
 	rat_print(&r);
 
 	rat_print_normalised(&r);
@@ -154,25 +216,25 @@ void rat_print_example(void)
 	rat arr_b[arr_max];
 	srand(time(NULL));
 
-	for (size_t i = 0; i < arr_max - 1; ++i) {
-		rat tmp = { 0 };
-		rat_get(&tmp, rand_num(-10, 20), rand_num(1, 20));
-		rat_copy(&arr_a[i], &tmp);
+	for (size_t i = 0; i < arr_max; ++i) {
+		rat tmp = rat_get(rand_num(1, 20), rand_num(1, 20));
+		rat_copy(&arr_a[i], tmp);
 	}
 
 	srand(time(NULL) + 1);
-	for (size_t i = 0; i < arr_max - 1; ++i) {
-		rat tmp = { 0 };
-		rat_get(&tmp, rand_num(-10, 20), rand_num(1, 20));
-		rat_copy(&arr_b[i], &tmp);
+	for (size_t i = 0; i < arr_max; ++i) {
+		rat tmp = rat_get(rand_num(1, 20), rand_num(1, 20));
+		rat_copy(&arr_b[i], tmp);
 	}
 
 	printf("arr_a:\n");
-	rat_print_array(arr_a, arr_max - 1);
+	rat_print_array(arr_a, arr_max);
 	printf("arr_b:\n");
-	rat_print_array(arr_b, arr_max - 1);
+	rat_print_array(arr_b, arr_max);
+
+	// rat_print(rat_sumup(&arr_a[0], arr_b[0]));
 
 	rat_dotproduct(&r, arr_max, arr_a, arr_b);
-	// rat_normalise(&r);
-	// rat_print(&r);
+	rat_print_normalised(&r);
+	rat_print_remainder(&r);
 }
